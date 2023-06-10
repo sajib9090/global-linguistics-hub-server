@@ -9,7 +9,7 @@ app.use(express.json());
 
 // mongodb
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.DB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -46,6 +46,30 @@ async function run() {
       }
 
       const result = await studentsCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.patch("/students/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await studentsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.patch("/students/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "instructor",
+        },
+      };
+      const result = await studentsCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
     // Send a ping to confirm a successful connection
