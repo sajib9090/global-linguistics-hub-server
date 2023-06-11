@@ -38,12 +38,22 @@ async function run() {
       const result = await studentsCollection.find().toArray();
       res.send(result);
     });
-    //post api
+    //get api
 
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+
+    // api for only approved classes
+
+    app.get("/classes/approved", async (req, res) => {
+      const approvedClasses = await classesCollection
+        .find({ status: "approved" })
+        .toArray();
+      res.send(approvedClasses);
+    });
+    //
     app.post("/classes", async (req, res) => {
       const course = req.body;
       const result = await classesCollection.insertOne(course);
