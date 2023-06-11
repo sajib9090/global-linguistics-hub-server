@@ -29,6 +29,9 @@ async function run() {
     const studentsCollection = client
       .db("globalLinguisticsHubDB")
       .collection("students");
+    const classesCollection = client
+      .db("globalLinguisticsHubDB")
+      .collection("classes");
 
     //get api
     app.get("/students", async (req, res) => {
@@ -36,6 +39,17 @@ async function run() {
       res.send(result);
     });
     //post api
+
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/classes", async (req, res) => {
+      const course = req.body;
+      const result = await classesCollection.insertOne(course);
+      res.send(result);
+    });
+
     app.post("/students", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -70,6 +84,45 @@ async function run() {
         },
       };
       const result = await studentsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.patch("/classes/approved/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    ///
+    app.patch("/classes/denied/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // delete api
+
+    app.delete("/students/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentsCollection.deleteOne(query);
+      res.send(result);
+    });
+    app.delete("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classesCollection.deleteOne(query);
       res.send(result);
     });
     // Send a ping to confirm a successful connection
