@@ -56,6 +56,29 @@ async function run() {
       .db("globalLinguisticsHubDB")
       .collection("classes");
 
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await studentsCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
+
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await studentsCollection.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
     //generate jwt token
 
     app.post("/jwt", async (req, res) => {
@@ -69,13 +92,13 @@ async function run() {
     });
 
     //get api
-    app.get("/students", async (req, res) => {
+    app.get("/students", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await studentsCollection.find().toArray();
       res.send(result);
     });
     //get api
 
-    app.get("/classes", async (req, res) => {
+    app.get("/classes", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
@@ -95,20 +118,25 @@ async function run() {
     });
 
     // get api by email
-    app.get("/classes/:email", verifyJWT, async (req, res) => {
-      const decodedEmail = req.decoded.email;
-      // console.log(decodedEmail);
-      const instructorEmail = req.params.email;
-      // console.log(instructorEmail);
-      if (instructorEmail !== decodedEmail) {
-        return res
-          .status(403)
-          .send({ error: true, message: "Forbidden Access" });
+    app.get(
+      "/classes/:email",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const decodedEmail = req.decoded.email;
+        // console.log(decodedEmail);
+        const instructorEmail = req.params.email;
+        // console.log(instructorEmail);
+        if (instructorEmail !== decodedEmail) {
+          return res
+            .status(403)
+            .send({ error: true, message: "Forbidden Access" });
+        }
+        const query = { instructorEmail: instructorEmail };
+        const result = await classesCollection.find(query).toArray();
+        res.send(result);
       }
-      const query = { instructorEmail: instructorEmail };
-      const result = await classesCollection.find(query).toArray();
-      res.send(result);
-    });
+    );
     //
 
     //
@@ -131,6 +159,18 @@ async function run() {
       res.send(result);
     });
 
+    //
+    app.get("/students/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+      const query = { email: email };
+      const student = await studentsCollection.findOne(query);
+      const result = { admin: student?.role === "admin" };
+      res.send(result);
+    });
+
     app.patch("/students/admin/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -140,6 +180,17 @@ async function run() {
         },
       };
       const result = await studentsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.get("/students/instructor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
+      const query = { email: email };
+      const student = await studentsCollection.findOne(query);
+      const result = { instructor: student?.role === "instructor" };
       res.send(result);
     });
 
