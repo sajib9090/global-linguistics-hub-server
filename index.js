@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -8,7 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 // mongodb
-
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.DB_URI;
 
@@ -20,6 +20,29 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+// validate jwt
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  // console.log(authorization);
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "Unauthorized Access" });
+  }
+  const token = authorization.split(" ")[1];
+  // console.log(token);
+  // token verify
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ error: true, message: "Unauthorized Access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 async function run() {
   try {
@@ -33,6 +56,18 @@ async function run() {
       .db("globalLinguisticsHubDB")
       .collection("classes");
 
+    //generate jwt token
+
+    app.post("/jwt", async (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      // console.log(token);
+      res.send({ token });
+    });
+
     //get api
     app.get("/students", async (req, res) => {
       const result = await studentsCollection.find().toArray();
@@ -44,15 +79,38 @@ async function run() {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
-
-    // api for only approved classes
-
+    //
     app.get("/classes/approved", async (req, res) => {
       const approvedClasses = await classesCollection
         .find({ status: "approved" })
         .toArray();
       res.send(approvedClasses);
     });
+    ///
+    app.get("/classes/pending", async (req, res) => {
+      const pendingClasses = await classesCollection
+        .find({ status: "pending" })
+        .toArray();
+      res.send(pendingClasses);
+    });
+
+    // get api by email
+    app.get("/classes/:email", verifyJWT, async (req, res) => {
+      const decodedEmail = req.decoded.email;
+      // console.log(decodedEmail);
+      const instructorEmail = req.params.email;
+      // console.log(instructorEmail);
+      if (instructorEmail !== decodedEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden Access" });
+      }
+      const query = { instructorEmail: instructorEmail };
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
+    });
+    //
+
     //
     app.post("/classes", async (req, res) => {
       const course = req.body;
@@ -115,8 +173,10 @@ async function run() {
       const updateDoc = {
         $set: {
           status: "denied",
+          reason: req.body.reason,
         },
       };
+
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
