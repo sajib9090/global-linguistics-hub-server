@@ -48,7 +48,7 @@ const verifyJWT = (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const studentsCollection = client
       .db("globalLinguisticsHubDB")
@@ -113,13 +113,13 @@ async function run() {
     });
 
     //get api
-    app.get("/students", verifyJWT, async (req, res) => {
+    app.get("/students", async (req, res) => {
       const result = await studentsCollection.find().toArray();
       res.send(result);
     });
     //get api
 
-    app.get("/classes", verifyJWT, async (req, res) => {
+    app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
@@ -176,42 +176,43 @@ async function run() {
     });
 
     // get api
-    app.get("/carts/payment-done", verifyJWT, async (req, res) => {
-      const email = req.query.email;
+    // app.get("/carts/payment-done", verifyJWT, async (req, res) => {
+    //   const email = req.query.email;
 
-      if (!email) {
-        res.send([]);
-      }
+    //   if (!email) {
+    //     res.send([]);
+    //   }
 
-      const decodedEmail = req.decoded.email;
-      if (email !== decodedEmail) {
-        return res
-          .status(403)
-          .send({ error: true, message: "forbidden access" });
-      }
+    //   const decodedEmail = req.decoded.email;
+    //   if (email !== decodedEmail) {
+    //     return res
+    //       .status(403)
+    //       .send({ error: true, message: "forbidden access" });
+    //   }
 
-      const query = { email: email, info: "payment done" };
-      const result = await cartCollection.find(query).toArray();
-      res.send(result);
-    });
-    app.get("/carts/payment-pending", verifyJWT, async (req, res) => {
-      const email = req.query.email;
+    //   const query = { email: email, info: "payment done" };
+    //   const result = await cartCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+    // app.get("/carts/payment-pending", verifyJWT, async (req, res) => {
+    //   const email = req.query.email;
+    //   console.log(email, "payment email");
 
-      if (!email) {
-        res.send([]);
-      }
+    //   if (!email) {
+    //     res.send([]);
+    //   }
 
-      const decodedEmail = req.decoded.email;
-      if (email !== decodedEmail) {
-        return res
-          .status(403)
-          .send({ error: true, message: "forbidden access" });
-      }
+    //   const decodedEmail = req.decoded.email;
+    //   if (email !== decodedEmail) {
+    //     return res
+    //       .status(403)
+    //       .send({ error: true, message: "forbidden access" });
+    //   }
 
-      const query = { email: email, info: "payment pending" };
-      const result = await cartCollection.find(query).toArray();
-      res.send(result);
-    });
+    //   const query = { email: email, info: "payment pending" };
+    //   const result = await cartCollection.find(query).toArray();
+    //   res.send(result);
+    // });
 
     app.get("/carts", verifyJWT, async (req, res) => {
       const email = req.query.email;
