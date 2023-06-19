@@ -176,43 +176,7 @@ async function run() {
     });
 
     // get api
-    // app.get("/carts/payment-done", verifyJWT, async (req, res) => {
-    //   const email = req.query.email;
-
-    //   if (!email) {
-    //     res.send([]);
-    //   }
-
-    //   const decodedEmail = req.decoded.email;
-    //   if (email !== decodedEmail) {
-    //     return res
-    //       .status(403)
-    //       .send({ error: true, message: "forbidden access" });
-    //   }
-
-    //   const query = { email: email, info: "payment done" };
-    //   const result = await cartCollection.find(query).toArray();
-    //   res.send(result);
-    // });
-    // app.get("/carts/payment-pending", verifyJWT, async (req, res) => {
-    //   const email = req.query.email;
-    //   console.log(email, "payment email");
-
-    //   if (!email) {
-    //     res.send([]);
-    //   }
-
-    //   const decodedEmail = req.decoded.email;
-    //   if (email !== decodedEmail) {
-    //     return res
-    //       .status(403)
-    //       .send({ error: true, message: "forbidden access" });
-    //   }
-
-    //   const query = { email: email, info: "payment pending" };
-    //   const result = await cartCollection.find(query).toArray();
-    //   res.send(result);
-    // });
+    //
 
     app.get("/carts", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -364,6 +328,38 @@ async function run() {
 
       res.send({ insertResult, updateResult });
     });
+    //
+    //------------------------------------------------------
+    app.patch("/classes/:id", async (req, res) => {
+      try {
+        const classId = req.params.id;
+        const { availableSeats, enrollment } = req.body;
+
+        // Validate and sanitize the input as needed
+
+        // Update the class using the provided ID and update fields
+        const updateResult = await classesCollection.updateOne(
+          { _id: ObjectId(classId) },
+          { $set: { availableSeats, enrollment } }
+        );
+
+        if (updateResult.modifiedCount > 0) {
+          res.json({ success: true, message: "Class information updated." });
+        } else {
+          res.json({
+            success: false,
+            message: "Class not found or no changes were made.",
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error." });
+      }
+    });
+
+    //----------------------------------------------------------------------------------
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
